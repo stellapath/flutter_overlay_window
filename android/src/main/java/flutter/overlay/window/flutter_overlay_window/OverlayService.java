@@ -29,6 +29,8 @@ import androidx.core.app.NotificationCompat;
 
 import com.example.flutter_overlay_window.R;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -120,6 +122,12 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 int width = call.argument("width");
                 int height = call.argument("height");
                 resizeOverlay(width, height, result);
+            } else if (call.method.equals("moveOverlay")) {
+                double x = call.argument("x");
+                double y = call.argument("y");
+                moveOverlay(x, y, result);
+            } else if (call.method.equals("getOverlayPosition")) {
+                getOverlayPosition(result);
             }
         });
         overlayMessageChannel.setMessageHandler((message, reply) -> {
@@ -229,6 +237,29 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
     }
 
+    private void moveOverlay(double x, double y, MethodChannel.Result result) {
+        if (windowManager != null) {
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+            params.x = dpToPx(x);
+            params.y = dpToPx(y);
+            windowManager.updateViewLayout(flutterView, params);
+            result.success(true);
+        } else {
+            result.success(false);
+        }
+    }
+
+    private void getOverlayPosition(MethodChannel.Result result) {
+        if (windowManager != null) {
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+            Map<String, Double> position = new HashMap<>();
+            position.put("x", pxToDp(params.x));
+            position.put("y", pxToDp(params.y));
+            result.success(position);
+        } else {
+            result.error("WindowManager is null", null, null);
+        }
+    }
 
     @Override
     public void onCreate() {
@@ -272,7 +303,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     private int dpToPx(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                Float.parseFloat(dp + ""), mResources.getDisplayMetrics());
+                (float) dp, mResources.getDisplayMetrics());
+    }
+
+    private int dpToPx(double dp) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                (float) dp, mResources.getDisplayMetrics());
+    }
+
+    private double pxToDp(int px) {
+        return px / mResources.getDisplayMetrics().density;
     }
 
     private boolean inPortrait() {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_overlay_window/src/overlay_config.dart';
@@ -112,6 +113,32 @@ class FlutterOverlayWindow {
       },
     );
     return _res;
+  }
+
+  /// Move overlay to specific position
+  static Future<bool> moveOverlay(double x, double y) async {
+    final bool? _res = await _overlayChannel.invokeMethod<bool?>(
+      'moveOverlay',
+      {
+        'x': x,
+        'y': y,
+      },
+    );
+    return _res ?? false;
+  }
+
+  static Future<math.Point<double>?> getOverlayPosition() async {
+    final Map<String, dynamic>? _res =
+        await _overlayChannel.invokeMapMethod('getOverlayPosition');
+
+    double? x = _res?['x'];
+    double? y = _res?['y'];
+
+    if (x != null && y != null) {
+      return math.Point(x, y);
+    }
+
+    return null;
   }
 
   /// Check if the current overlay is active
